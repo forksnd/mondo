@@ -170,3 +170,23 @@ Input history is stored under `~/.mondo/history` (or `$XDG_DATA_HOME/mondo/histo
 ## License
 
 GNU General Public License v3.0
+
+## Bundled Libraries
+
+Mondo bundles the following Common Lisp libraries for standalone distribution:
+
+- Alexandria - Public Domain / MIT-style
+- Babel - MIT License (with BSD license for src/streams.lisp)
+- Bordeaux-Threads - MIT License
+- CFFI - MIT License
+- cl-readline - GNU GPL v3.0
+- Global-Vars - MIT License
+- SLIME - Public Domain
+- Split-Sequence - MIT License
+- Trivial-Features - MIT License
+- Trivial-Garbage - Public Domain
+- Trivial-Gray-Streams - MIT License
+- usocket - MIT License
+- YASON - BSD 3-Clause License
+
+See [THIRD-PARTY-LICENSES](THIRD-PARTY-LICENSES) for full license texts.

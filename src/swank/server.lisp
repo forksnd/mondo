@@ -59,7 +59,7 @@
   "Find Swank installation in mondo's .qlot directory"
   (let ((mondo-dir (asdf:system-source-directory :mondo)))
     (when mondo-dir
-      (let ((slime-software-dir (merge-pathnames #P".qlot/dists/quicklisp/software/" mondo-dir)))
+      (let ((slime-software-dir (merge-pathnames #P".bundle-libs/software/" mondo-dir)))
         (when (uiop:directory-exists-p slime-software-dir)
           ;; Find directory matching slime-v*
           (let ((slime-dirs (uiop:subdirectories slime-software-dir)))
