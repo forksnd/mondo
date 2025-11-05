@@ -5,10 +5,11 @@ It's not intended to achieve the same behavior, but it aims to provide its funct
 
 Not only evaluating Lisp forms in the REPL, it also relays the communication with a Swank server between different protocol servers over TCP. See [Editor Integration](#editor-integration) for the detail.
 
-## Prequisite
+## Prerequisites
 
-* [Roswell](https://github.com/roswell/roswell)
+* [SBCL](http://www.sbcl.org/)
 * [GNU Readline](https://tiswww.case.edu/php/chet/readline/rltop.html)
+* [Qlot](https://github.com/fukamachi/qlot) (for dependency management)
 
 ## Features
 
@@ -44,17 +45,28 @@ $ sudo mkdir -p /usr/local/opt/readline/lib
 $ sudo ln -s  /opt/homebrew/opt/readline/lib/* /usr/local/opt/readline/lib
 ```
 
-### Install Roswell
-
-See [Roswell's installation guide](https://github.com/roswell/roswell/wiki/Installation).
-
 ### Install mondo
 
 ```
-$ ros install fukamachi/mondo
+$ git clone https://github.com/fukamachi/mondo.git
+$ cd mondo
+$ qlot install
 ```
 
-Be sure that `~/.roswell/bin` is added to `PATH`.
+You can run mondo directly from the repository:
+
+```
+$ ./bin/mondo
+```
+
+Or create a symlink to `~/.local/bin`:
+
+```
+$ mkdir -p ~/.local/bin
+$ ln -s "$(pwd)/bin/mondo" ~/.local/bin/mondo
+```
+
+Make sure `~/.local/bin` is in your `PATH`.
 
 ## Usage
 
@@ -64,7 +76,7 @@ Usage: mondo [OPTIONS...] [DIRECTORY]
 
 OPTIONS:
     -L, --lisp [NAME]
-        Run the specific Lisp implementation (Default: sbcl-bin)
+        Run the specific Lisp implementation (Default: sbcl)
     -S, --source-registry [SOURCE REGISTRY]
         Overwrite source registry of ASDF with the argument
     -Q, --quicklisp [QUICKLISP HOME]
@@ -98,7 +110,7 @@ The simplest use case is to use REPL in Terminal.
 
 ```
 $ mondo
-SBCL 2.1.7 running at 127.0.0.1:50476 (pid=484434)
+SBCL 2.5.10 running at 127.0.0.1:50476 (pid=484434)
 CL-USER>
 ```
 

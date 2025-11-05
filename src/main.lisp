@@ -46,8 +46,8 @@
                          :port (or port 4005))
       (create-swank-server :lisp lisp
                            :source-registry (or source-registry
-                                                 (and directory
-                                                      (uiop:native-namestring directory)))
+                                                (and directory
+                                                     (uiop:native-namestring directory)))
                            :quicklisp (or quicklisp
                                           (and directory
                                                (directory-qlot-directory directory)))

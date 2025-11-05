@@ -4,6 +4,9 @@
                           #:log)
   (:import-from #:mondo/utils
                 #:random-port)
+  (:import-from #:mondo/lisp-impl
+                #:normalize-lisp-name
+                #:build-swank-command)
   (:import-from #:usocket)
   (:export #:create-swank-server
            #:swank-server
@@ -25,51 +28,65 @@
     (usocket:connection-refused-error () nil)
     (usocket:connection-reset-error () nil)))
 
-(defun normalize-quicklisp-path (path)
-  (etypecase path
-    (pathname
-      (uiop:escape-shell-command
-        (uiop:native-namestring (uiop:ensure-directory-pathname path))))
-    (string
-      (normalize-quicklisp-path (pathname path)))))
+(defun try-start-swank-server (lisp port source-registry swank-directory quicklisp-home)
+  "Attempt to start a Swank server with the given configuration"
+  (let* ((command-args (build-swank-command lisp
+                                            :port port
+                                            :source-registry source-registry
+                                            :swank-directory swank-directory
+                                            :quicklisp-home quicklisp-home))
+         (command (cons lisp command-args))
+         (process (handler-case
+                      (progn
+                        (log :debug "Command: ~{~S~^ ~}" command)
+                        (uiop:launch-program command
+                                             :input :stream
+                                             :output nil
+                                             :error-output nil))
+                    (error (e)
+                      (log :error "Failed to launch ~A: ~A" lisp e)
+                      (uiop:quit -1)))))
+    (values process
+            (loop repeat 300
+                  do (sleep 0.1)
+                  when (server-running-p port)
+                    do (return :success)
+                  unless (uiop:process-alive-p process)
+                    do (return :failed)
+                  finally (return :timeout)))))
+
+(defun find-mondo-swank-directory ()
+  "Find Swank installation in mondo's .qlot directory"
+  (let ((mondo-dir (asdf:system-source-directory :mondo)))
+    (when mondo-dir
+      (let ((slime-software-dir (merge-pathnames #P".qlot/dists/quicklisp/software/" mondo-dir)))
+        (when (uiop:directory-exists-p slime-software-dir)
+          ;; Find directory matching slime-v*
+          (let ((slime-dirs (uiop:subdirectories slime-software-dir)))
+            (find-if (lambda (dir)
+                       (let ((dirname (car (last (pathname-directory dir)))))
+                         (and (stringp dirname)
+                              (uiop:string-prefix-p "slime-v" dirname)
+                              (uiop:file-exists-p (merge-pathnames "swank.asd" dir)))))
+                     slime-dirs)))))))
 
 (defun create-swank-server (&key lisp source-registry quicklisp port)
-  (let ((lisp (or lisp "sbcl-bin"))
-        (port (or port (random-port))))
-    (log :debug "Starting a swank server on ~A at port=~A" lisp port)
-    (let ((process (handler-case
-                       (uiop:launch-program
-                         (format nil "~@[QUICKLISP_HOME=~A ~]~A"
-                                 (and quicklisp
-                                      (normalize-quicklisp-path quicklisp))
-                                 (uiop:escape-shell-command
-                                   `("ros" "-L" ,lisp
-                                           ,@(when source-registry
-                                               `("-S" ,source-registry))
-                                           "-s" "swank"
-                                           ;; To muffle outputs from Swank on startup
-                                           "-e" "(setf swank::*swank-debug-p* nil swank::*log-output* (make-broadcast-stream))"
-                                           "-e" "(handler-bind (#+sbcl (sb-kernel:redefinition-warning #'muffle-warning)) (swank:swank-require 'swank-repl))"
-                                           "-e" ,(format nil "(swank:create-server :port ~D :dont-close t)" port) "run")))
-                         :input :stream
-                         :output nil
-                         :error-output :interactive)
-                     (error (e)
-                       (log :error "Failed to start a swank server: ~A" e)
-                       (uiop:quit -1)))))
-      (prog1
-          (make-swank-server :process process
-                             :host "127.0.0.1"
-                             :port port)
-        (log :debug "Waiting for the server to be ready")
-        (loop repeat 300
-              do (sleep 0.1)
-              when (server-running-p port)
-              do (return)
-              unless (uiop:process-alive-p process)
-              do (log :error "Failed to start a swank server")
-                 (uiop:quit -1)
-              finally
-              (progn
-                (log :error "Took too long for the server to start. Timeout.")
-                (uiop:quit -1)))))))
+  (let* ((lisp (or lisp "sbcl"))
+         (normalized-lisp (normalize-lisp-name lisp))
+         (port (or port (random-port)))
+         (swank-directory (find-mondo-swank-directory)))
+    (log :debug "Starting a swank server on ~A at port=~A" normalized-lisp port)
+
+    (multiple-value-bind (process status)
+        (try-start-swank-server normalized-lisp port source-registry swank-directory quicklisp)
+      (cond
+        ((eq status :success)
+         (make-swank-server :process process
+                            :host "127.0.0.1"
+                            :port port))
+        (t
+         (log :error "~A"
+              (case status
+                (:failed "Failed to start a swank server")
+                (:timeout "Took too long for the server to start. Timeout.")))
+         (uiop:quit -1))))))

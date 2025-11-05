@@ -13,10 +13,10 @@ while [ -L "$SCRIPT" ]; do
 done
 PROJECT_DIR=$(cd "$(dirname "$SCRIPT")/.." && pwd)
 
-if [ -f "$PROJECT_DIR/.qlot/setup.lisp" ]; then
-  SETUP_FILE="$PROJECT_DIR/.qlot/setup.lisp"
-elif [ -f "$PROJECT_DIR/.bundle-libs/setup.lisp" ]; then
+if [ -f "$PROJECT_DIR/.bundle-libs/setup.lisp" ]; then
   SETUP_FILE="$PROJECT_DIR/init.lisp"
+elif [ -f "$PROJECT_DIR/.qlot/setup.lisp" ]; then
+  SETUP_FILE="$PROJECT_DIR/.qlot/setup.lisp"
 else
   echo "Mondo is not setup yet." >&2
   exit 1

@@ -76,7 +76,7 @@
 
 OPTIONS:
     -L, --lisp [NAME]
-        Run the specific Lisp implementation (Default: sbcl-bin)
+        Run the specific Lisp implementation (Default: sbcl)
     -S, --source-registry [SOURCE REGISTRY]
         Overwrite source registry of ASDF with the argument
     -Q, --quicklisp [QUICKLISP HOME]
