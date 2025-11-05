@@ -1,0 +1,29 @@
+#!/bin/sh
+# Mondo CLI wrapper script
+
+# Find the script directory
+SCRIPT="$0"
+while [ -L "$SCRIPT" ]; do
+  SCRIPT_DIR=$(cd "$(dirname "$SCRIPT")" && pwd)
+  SCRIPT=$(readlink "$SCRIPT")
+  case "$SCRIPT" in
+    /*) ;;
+    *) SCRIPT="$SCRIPT_DIR/$SCRIPT" ;;
+  esac
+done
+PROJECT_DIR=$(cd "$(dirname "$SCRIPT")/.." && pwd)
+
+if [ -f "$PROJECT_DIR/.qlot/setup.lisp" ]; then
+  SETUP_FILE="$PROJECT_DIR/.qlot/setup.lisp"
+elif [ -f "$PROJECT_DIR/.bundle-libs/setup.lisp" ]; then
+  SETUP_FILE="$PROJECT_DIR/init.lisp"
+else
+  echo "Mondo is not setup yet." >&2
+  exit 1
+fi
+
+# Run with SBCL
+exec sbcl --noinform --non-interactive \
+    --load "$SETUP_FILE" \
+    --eval '(let ((*standard-output* (make-broadcast-stream)) (*error-output* (make-broadcast-stream)) (*trace-output* (make-broadcast-stream))) (asdf:load-system :mondo/command))' \
+    --eval "(mondo/cli:main)" "$@"
