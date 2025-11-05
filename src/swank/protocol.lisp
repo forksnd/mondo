@@ -362,7 +362,7 @@
              connection))
 
 (defun swank-create-repl (connection)
-  (swank-rex `(swank-repl:create-repl nil :coding-system "utf-8-unix")
+  (swank-rex `(swank-repl:create-repl nil)
              connection))
 
 (defun swank-init-presentations (connection)
